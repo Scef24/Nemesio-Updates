@@ -6,6 +6,15 @@ use Illuminate\Http\Request;
 use App\Models\Announcement;
 class AnnouncementController extends Controller
 {
+    public function announcements(){
+        try{
+            $announcement = Announcement::all();
+            return response()->json($announcement);
+        }
+        catch(\Exception $e){
+            return response()->json(["message"=>"Error Fetching Data","error"=>$e->getMessage()]);
+        }
+    }
     public function index(){
         try{
         $announcement = Announcement::all();
@@ -47,19 +56,19 @@ class AnnouncementController extends Controller
     }
 
     public function update(Request $request, $id){
-       
         try{
             $announcement = Announcement::find($id);
             if(!$announcement) {
                 return response()->json(["message"=>"No Id Found"]);
             }
             else{
-                $announcement = $request->only([
-                    'title',
-                    'context',
-                    'status'
-                ]);
-                return response()->json(["message"=>"Updated Successfully",$announcement]);
+                // Update the announcement properties
+                $announcement->title = $request->input('title');
+                $announcement->context = $request->input('context');
+                $announcement->status = $request->input('status');
+                $announcement->save(); // Save the updated announcement
+
+                return response()->json(["message"=>"Updated Successfully", "announcement" => $announcement]);
             }
         }
         catch(\Exception $e){
@@ -116,4 +125,24 @@ class AnnouncementController extends Controller
             return response()->json(["message"=>"Error Fething Data","error"=>$e->getMessage()]);
         }
     }
+    public function getHistory(){
+        $announcement = Announcement::where('status',"Done")
+                                    ->get();
+
+            if($announcement->isEmpty()){
+                return response()->json(["message"=>"No Data"]);
+            }
+            else{
+                return response()->json($announcement); 
+            }
+    }
+    public function filterByStatus(Request $request){
+        $request->validate([
+            'status'
+        ]);
+        $status = $request->input('status');
+        $announcements = Announcement::where('status',$status)->get();
+        return response()->json($announcements);
+    }
+    
 }

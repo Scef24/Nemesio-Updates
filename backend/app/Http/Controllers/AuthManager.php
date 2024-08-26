@@ -56,4 +56,16 @@ class AuthManager extends Controller
             return response()->json(['error' => 'No user logged in'], 401); // Handle unauthenticated case
         }
     }
+    public function changePassword(Request $request)
+{
+    $request->validate([
+        'password' => 'required|string', 
+    ]);
+
+    $user = $request->user();
+    $user->password = Hash::make($request->password); 
+    $user->save();
+
+    return response()->json(['message' => 'Password changed successfully']);
+}
 }

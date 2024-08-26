@@ -14,12 +14,16 @@ use App\Http\Controllers\AuthManager;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-Route::post('/login', [AuthManager::class, 'login']);
-Route::post('/logout', [AuthManager::class, 'logout']); 
+Route::post('/login', [AuthManager::class, 'login'])->name('login'); 
+Route::get('/announcements',[AnnouncementController::class,'announcements']);
 Route::post('/register',[AuthManager::class, 'register']);
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthManager::class, 'logout']); 
+    Route::apiResource('/announcement',AnnouncementController::class);
+    Route::post('/change-password', [AuthManager::class,'changePassword']);
+    Route::post('/sortAnnouncement',[AnnouncementController::class,'sortAnnouncement']);
+    Route::get('/history',[AnnouncementController::class,'getHistory']);
+    Route::get('/announcements/filter', [AnnouncementController::class, 'filterByStatus']);
 });
-Route::apiResource('/announcement',AnnouncementController::class);
-Route::post('/sortAnnouncement',[AnnouncementController::class,'sortAnnouncement']);
+
 Route::post('/searchAnnouncement',[AnnouncementController::class,'searchAnnouncement']);
