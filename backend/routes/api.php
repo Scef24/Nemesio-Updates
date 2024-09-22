@@ -4,6 +4,8 @@ use App\Http\Controllers\AnnouncementController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthManager;
+use App\Http\Controllers\AdminController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -15,8 +17,7 @@ use App\Http\Controllers\AuthManager;
 |
 */
 Route::post('/login', [AuthManager::class, 'login'])->name('login'); 
-Route::get('/announcements',[AnnouncementController::class,'announcements']);
-Route::post('/register',[AuthManager::class, 'register']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthManager::class, 'logout']); 
     Route::apiResource('/announcement',AnnouncementController::class);
@@ -27,3 +28,14 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::post('/searchAnnouncement',[AnnouncementController::class,'searchAnnouncement']);
+
+Route::middleware(['auth:sanctum', 'super_admin'])->group(function () {
+    Route::get('/users', [AdminController::class, 'getAllUsers']);
+    Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+    Route::post('/users/{id}/block', [AdminController::class, 'blockUser']);
+    Route::get('/announcements',[AnnouncementController::class,'announcements']);
+    Route::post('/register',[AuthManager::class, 'register']);
+    Route::post('/users/{id}/findBlock', [AuthManager::class, 'findBlockUser']);
+    Route::post('/users/{id}/unblock', [AdminController::class, 'unblockUser']);
+    
+});

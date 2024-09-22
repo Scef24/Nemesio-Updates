@@ -19,7 +19,7 @@ class AuthManager extends Controller
             $token = $user->createToken('authToken')->plainTextToken;
            
             
-            return response()->json(['fname' => $user->fname, 'token' => $token]);
+            return response()->json(['fname' => $user->fname, 'token' => $token, 'email'=> $user->email, 'password'=> $user->password, 'user_role'=> $user->role]);
         } else {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
@@ -42,18 +42,19 @@ class AuthManager extends Controller
         $user->lname = $request->lname;
         $user->email = $request->email;
         $user->password = Hash::make($request->password);
+        $user->role='user';
         $user->save();
         
         return response()->json(['message' => 'User registered successfully'], 201);
     }
     
     public function logout(Request $request){
-        $user = Auth::user(); // Get the authenticated user
-        if ($user) { // Check if user is authenticated
-            $user->tokens()->delete(); // Revoke all tokens for the user
-            return response()->json(['message' => 'Logout successful'], 200); // Return success message
+        $user = Auth::user(); 
+        if ($user) { 
+            $user->tokens()->delete(); 
+            return response()->json(['message' => 'Logout successful'], 200); 
         } else {
-            return response()->json(['error' => 'No user logged in'], 401); // Handle unauthenticated case
+            return response()->json(['error' => 'No user logged in'], 401); 
         }
     }
     public function changePassword(Request $request)
