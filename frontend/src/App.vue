@@ -13,7 +13,7 @@ export default {
   name: 'App',
   data() {
     return {
-      // Define your data properties here
+      
     };
   },
   methods: {

@@ -12,6 +12,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import axios from 'axios';
 
 const emit = defineEmits(['close', 'changePassword']);
 const newPassword = ref('');
@@ -21,13 +22,28 @@ const closeModal = () => {
     emit('close');
 };
 
-const submitChangePassword = () => {
+const submitChangePassword = async () => {
     if (newPassword.value !== confirmPassword.value) {
         alert("Passwords do not match!");
         return;
     }
-    emit('changePassword', newPassword.value); // Emit the new password to the parent component
-    closeModal();
+
+    try {
+        const token = localStorage.getItem('token'); // Assuming the token is stored in localStorage
+        const response = await axios.post('http://127.0.0.1:8000/api/change-password', {
+            password: newPassword.value,
+        }, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        alert(response.data.message);
+        emit('changePassword', newPassword.value);
+        closeModal();
+    } catch (error) {
+        console.error(error);
+        alert('Error changing password');
+    }
 };
 </script>
 

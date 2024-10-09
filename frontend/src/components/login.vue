@@ -47,25 +47,32 @@ const login = async () => {
     });
     console.log("Login successful:", response.data);
     
-    // Store the token in localStorage
     localStorage.setItem('token', response.data.token);
+    localStorage.setItem('fname', response.data.fname);
+    localStorage.setItem('email', response.data.email);
+    localStorage.setItem('user_role', response.data.user_role); // Store user role
+    console.log('User role from response:', response.data.user_role);
 
-    // Redirect to the admin dashboard
-    router.push({ name: 'AdminDashboard' });
+    if (response.data.user_role === 'super_admin') {
+      router.push({ name: 'SuperAdmin' });
+      console.log('redireting to admin panel')
+    } else {
+      router.push({ name: 'AdminDashboard' });
+    }
   } catch (error) {
     if (error.response) {
       notificationMessage.value = 'Invalid credentials. Please try again.';
     } else {
       notificationMessage.value = 'An error occurred. Please try again.';
     }
-    showNotification.value = true; // Show notification modal
+    showNotification.value = true; 
   } finally {
-    isLoading.value = false; // Hide loader
+    isLoading.value = false;
   }
 };
 
 const handleButtonClick = () => {
-  router.push({name: 'Home'})
+  router.push({ name: 'Home' });
 };
 </script>
 
@@ -218,6 +225,7 @@ body {
     width: 70%;
     padding: 15px;
     margin-top: 0;
+    margin-bottom:20px;
   }
   .logo-section {
     margin-top: 0;

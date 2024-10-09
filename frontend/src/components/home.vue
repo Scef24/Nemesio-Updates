@@ -103,11 +103,11 @@
   background-color: #020202;
 }
 .hamburger:focus {
-  outline: none; /* Remove the default focus outline */
+  outline: none; 
 }
 
 .sidebar {
-  width: 130px;
+  width: 220px;
   background-color: #800000; /* Maroon sidebar */
   padding: 20px;
   box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);

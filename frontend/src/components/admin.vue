@@ -33,10 +33,10 @@
             <button type="submit">{{ form.id !== null ? 'Update' : 'Add' }} Announcement</button>
           </form>
   
-          <!-- Search Functionality -->
+          
           <input v-model="searchQuery" type="text" placeholder="Search announcements..." />
   
-          <!-- Scrollable Announcement List -->
+         
           <div class="announcement-list">
             <div
               class="announcement-card"
@@ -82,21 +82,21 @@
         message="Are you sure you want to logout?" 
         @close="isLogoutConfirmationVisible = false" 
     />
-    <div v-if="isLoading" class="loader">Loading...</div> <!-- Loader element -->
+    <div v-if="isLoading" class="loader">Loading...</div> 
   </template>
   
   <script setup>
-  import { ref, computed, onMounted } from 'vue'; // Ensure computed is imported
+  import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   import axios from 'axios';
-  import ChangePasswordModal from './ChangePasswordModal.vue'; // Import the change password modal
-  import NotificationsModal from './NotificationsModal.vue'; // Import the notifications modal
-  import ConfirmationModal from './ConfirmationModal.vue'; // Import the confirmation modal
+  import ChangePasswordModal from './ChangePasswordModal.vue'; 
+  import NotificationsModal from './NotificationsModal.vue'; 
+  import ConfirmationModal from './ConfirmationModal.vue'; 
 
   const router = useRouter();
 
   const view = ref('announcements');
-  const sidebarOpen = ref(false);  // Track which section is being viewed
+  const sidebarOpen = ref(false);  
   const announcements = ref([]);
   const form = ref({ id: null, title: '', context: '', status: 'On Going' });
   const searchQuery = ref('');
@@ -107,12 +107,12 @@
     );
   });
   
-  // Define your methods (addOrUpdateAnnouncement, editAnnouncement, deleteAnnouncement, etc.)
+  
   const toggleSidebar = () => {
-  sidebarOpen.value = !sidebarOpen.value; // Toggle sidebar state
+  sidebarOpen.value = !sidebarOpen.value; 
 };
   const addOrUpdateAnnouncement = async () => {
-    isLoading.value = true; // Start loading
+    isLoading.value = true; 
     try {
         if (form.value.id !== null) {
             await axios.put(`http://127.0.0.1:8000/api/announcement/${form.value.id}`, form.value, {
@@ -120,30 +120,30 @@
                     Authorization: `Bearer ${localStorage.getItem('token')}`, 
                 },
             });
-            await fetchAnnouncements(); // Re-fetch announcements after update
-            announcements.value = [...announcements.value]; // Force reactivity
+            await fetchAnnouncements();
+            announcements.value = [...announcements.value]; 
      
             modalMessage.value = 'Announcement updated successfully!'; 
         } else {
-            // Add new announcement
+           
             const response = await axios.post('http://127.0.0.1:8000/api/announcement', form.value, {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`, // Include token if needed
+                    Authorization: `Bearer ${localStorage.getItem('token')}`, 
                 },
             });
             announcements.value.push(response.data.announcement); 
-            await fetchAnnouncements(); // Re-fetch announcements after update
-            announcements.value = [...announcements.value]; // Add the new announcement to the list
-            modalMessage.value = 'Announcement added successfully!'; // Set success message
+            await fetchAnnouncements(); 
+            announcements.value = [...announcements.value];
+            modalMessage.value = 'Announcement added successfully!'; 
         }
-        resetForm(); // Reset the form after successful operation
-        isModalVisible.value = true; // Show modal
+        resetForm(); 
+        isModalVisible.value = true; 
     } catch (error) {
         console.error('Failed to add/update announcement:', error.response ? error.response.data : error.message);
-        modalMessage.value = 'Failed to add/update announcement: ' + (error.response ? error.response.data.message : error.message); // Set error message
-        isModalVisible.value = true; // Show modal
+        modalMessage.value = 'Failed to add/update announcement: ' + (error.response ? error.response.data.message : error.message);
+        isModalVisible.value = true; 
     } finally {
-        isLoading.value = false; // Stop loading
+        isLoading.value = false; 
     }
 };
   
@@ -152,15 +152,15 @@
   };
   
   const isConfirmationVisible = ref(false);
-  let announcementToDelete = ref(null); // Store the ID of the announcement to delete
+  let announcementToDelete = ref(null); 
 
   const confirmDelete = (id) => {
-    announcementToDelete.value = id; // Set the announcement ID to delete
-    isConfirmationVisible.value = true; // Show confirmation modal
+    announcementToDelete.value = id; 
+    isConfirmationVisible.value = true; 
   };
 
   const handleDelete = async () => {
-    isLoading.value = true; // Start loading
+    isLoading.value = true; 
     try {
         await axios.delete(`http://127.0.0.1:8000/api/announcement/${announcementToDelete.value}`, {
             headers: {
@@ -169,16 +169,16 @@
         });
         announcements.value = announcements.value.filter(announcement => announcement.id !== announcementToDelete.value);
         modalMessage.value = 'Announcement deleted successfully!';
-        isModalVisible.value = true; // Show modal
-        await fetchAnnouncements(); // Re-fetch announcements after update
+        isModalVisible.value = true
+        await fetchAnnouncements(); 
             announcements.value = [...announcements.value];
     } catch (error) {
         console.error('Failed to delete announcement:', error.response ? error.response.data : error.message);
         modalMessage.value = 'Failed to delete announcement: ' + (error.response ? error.response.data.message : error.message);
-        isModalVisible.value = true; // Show modal
+        isModalVisible.value = true; 
     } finally {
-        isLoading.value = false; // Stop loading
-        isConfirmationVisible.value = false; // Close confirmation modal
+        isLoading.value = false; 
+        isConfirmationVisible.value = false; 
     }
   };
   
@@ -195,68 +195,69 @@
   };
   
   const viewHistory = () => {
-    // Implement view history logic
+   
   };
   
-  const isLogoutConfirmationVisible = ref(false); // Track logout confirmation visibility
+  const isLogoutConfirmationVisible = ref(false); 
 
   const logout = async () => {
-    isLogoutConfirmationVisible.value = true; // Show confirmation modal
+    isLogoutConfirmationVisible.value = true; 
   };
 
-  // Add a method to handle logout confirmation
+ 
   const confirmLogout = async () => {
-    isLoading.value = true; // Start loading
+    isLoading.value = true;
     try {
         await axios.post('http://127.0.0.1:8000/api/logout', {}, {
             headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`, // Include the token in the request
+                Authorization: `Bearer ${localStorage.getItem('token')}`, 
             },
         });
     } catch (error) {
         console.error('Logout failed:', error.response ? error.response.data : error.message);
     } finally {
-        localStorage.removeItem('token'); // Remove the token from localStorage
-        router.push({ name: 'Login' }); // Redirect to the login page
-        isLoading.value = false; // Stop loading
+        localStorage.removeItem('token'); 
+        router.push({ name: 'Login' }); 
+        isLoading.value = false; 
     }
   };
 
   // Add a method to cancel logout
   const cancelLogout = () => {
-    isLogoutConfirmationVisible.value = false; // Hide confirmation modal
+    isLogoutConfirmationVisible.value = false; //
   };
 
   const admin = ref({
-    name: 'Super Admin', // Replace with actual admin data
-    email: 'admin@example.com', // Replace with actual admin data
+    name: localStorage.getItem('fname'),
+    email: localStorage.getItem('email'),
+    password : localStorage.getItem('password')
   });
 
   const showChangePasswordModal = ref(false);
 
   const isModalVisible = ref(false);
   const modalMessage = ref('');
-  const isLoading = ref(false); // Loader state
+  const isLoading = ref(false); 
 
   const changePassword = async (newPassword) => {
-    isLoading.value = true; // Start loading
+    isLoading.value = true; 
     try {
-        // Call your API to change the password
+        
         const response = await axios.post('http://127.0.0.1:8000/api/change-password', {
             password: newPassword,
         }, {
             headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`, // Include the token
+                Authorization: `Bearer ${localStorage.getItem('token')}`, 
             },
         });
-        modalMessage.value = 'Password changed successfully!'; // Set success message
-        isModalVisible.value = true; // Show modal
+        modalMessage.value = 'Password changed successfully!'; 
+        isModalVisible.value = true; 
     } catch (error) {
-        modalMessage.value = 'Failed to change password: ' + (error.response ? error.response.data.message : error.message); // Set error message
-        isModalVisible.value = true; // Show modal
+        modalMessage.value = 'Failed to change password: ' + (error.response ? error.response.data.message : error.message);
+        isModalVisible.value = true; 
     } finally {
-        isLoading.value = false; // Stop loading
-        showChangePasswordModal.value = false; // Close the change password modal
+        isLoading.value = false; 
+        showChangePasswordModal.value = false; 
     }
   };
 
@@ -264,10 +265,10 @@
     try {
         const response = await axios.get('http://127.0.0.1:8000/api/announcement', {
             headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`, // Ensure the token is retrieved correctly
+                Authorization: `Bearer ${localStorage.getItem('token')}`, 
             },
         });
-        announcements.value = response.data; // Assuming the response is an array of announcements
+        announcements.value = response.data; 
     } catch (error) {
         console.error('Failed to fetch announcements:', error);
     }
@@ -286,14 +287,14 @@
   .dashboard-container {
     display: flex;
     min-height: 100vh;
-    background-color: #fff; /* White background */
-    overflow: hidden; /* Prevent overflow */
+    background-color: #fff; 
+    overflow: hidden;
   }
   
-  /* Sidebar Styles */
+  
   .sidebar {
     width: 250px;
-    background-color: #800000; /* Maroon sidebar */
+    background-color: #800000; 
     padding: 20px;
     box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
@@ -311,7 +312,7 @@
   width: 300px;
 }
   .sidebar-title {
-    color: white; /* White text for sidebar title */
+    color: white; 
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 20px;
