@@ -5,7 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthManager;
 use App\Http\Controllers\AdminController;
-
+use App\Http\Controllers\EventController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -39,3 +39,4 @@ Route::middleware(['auth:sanctum', 'super_admin'])->group(function () {
     Route::post('/users/{id}/unblock', [AdminController::class, 'unblockUser']);
     
 });
+Route::apiResource('/events',EventController::class);

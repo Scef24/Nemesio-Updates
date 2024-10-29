@@ -2,9 +2,9 @@
     <div class="modal" v-if="isVisible">
         <div class="modal-content">
             <span class="close" @click="close">&times;</span>
-            <h2>Confirm Logout</h2>
-            <p>Are you sure you want to logout?</p>
-            <button @click="confirmLogout">Yes, Logout</button>
+            <h2>Confirmation</h2>
+            <p>{{ message }}</p>
+            <button @click="confirmAction">Yes, Confirm</button>
             <button @click="close">Cancel</button>
         </div>
     </div>
@@ -21,12 +21,16 @@ const props = defineProps({
     onConfirm: {
         type: Function,
         required: true
+    },
+    message: {
+        type: String,
+        required: true
     }
 });
 
 const emit = defineEmits(['close']);
 
-const confirmLogout = () => {
+const confirmAction = () => {
     props.onConfirm();
     emit('close');
 };

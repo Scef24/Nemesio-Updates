@@ -5,6 +5,12 @@
         <h1 class="header-title">NETMHS UPDATES</h1> <!-- Header Title -->
       </header>
      <router-view></router-view>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>&copy; 2024 NETMHS. All rights reserved.</p>
+      <p>Contact us: netmhsshs303193@gmail.com</p>
+    </footer>
   </div>
 </template>
 
@@ -85,5 +91,18 @@ html, body {
     .header-logo{
         display:none;
     }
+}
+
+.footer {
+  background-color: #800000;
+  color: white;
+  text-align: center;
+  padding: 10px 0;
+  width: 100%;
+}
+
+.footer p {
+  margin: 5px 0;
+  font-size: 14px;
 }
 </style>

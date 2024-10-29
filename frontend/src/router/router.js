@@ -3,18 +3,19 @@ import Home from '../components/home.vue';
 import Login from '../components/login.vue';
 import Admin from '../components/admin.vue';
 import SuperAdmin from '../components/SuperAdmin.vue';
-
+import About from '../components/about.vue';
 const routes = [
     { path: '/', name: 'Home', component: Home },
     { path: '/login', name: 'Login', component: Login },
     { path: '/admin', name: 'AdminDashboard', component: Admin, meta: { requiresAuth: true } },
-    { path: '/:catchAll(.*)', redirect: '/login' },
+    // { path: '/:catchAll(.*)', redirect: '/login' },
     {
         path: '/superAdmin',
         name: 'SuperAdmin',
         component: SuperAdmin,
-        meta: { requiresAuth: true, requiresSuperAdmin: true }
-    }
+        // meta: { requiresAuth: true, requiresSuperAdmin: true }
+    },
+    { path: '/about', name: 'About', component: About }
 ];
 
 const router = createRouter({

@@ -6,11 +6,12 @@
       <span class="hamburger-bar"></span>
       <span class="hamburger-bar"></span>
     </button> 
-      <!-- Sidebar -->
+      <!-- Sidebar -->  
 <aside :class="['sidebar', { 'sidebar-open': sidebarOpen, 'sidebar-hidden': !sidebarOpen }]">
         <h2 class="sidebar-title">Admin Dashboard</h2>
         <ul class="sidebar-menu">
           <li><a href="#" @click="viewAnnouncements">Manage Announcements</a></li>
+          <li><a href="#" @click="viewCalendar">Manage Calendar</a></li>
           <li><a href="#" @click="viewProfile">Profile</a></li>
           <li><button @click="logout">Logout</button></li>
         </ul>
@@ -23,15 +24,26 @@
           
           <!-- Announcement Form -->
           <form @submit.prevent="addOrUpdateAnnouncement">
-            <input v-model="form.title" type="text" placeholder="Title" required />
-            <textarea v-model="form.context" placeholder="Content" required></textarea>
-            <select v-model="form.status" required>
-              <option value="On Going">On Going</option>
-              <option value="Done">Done</option>
-              <option value="Pending">Pending</option>
-            </select>
-            <button type="submit">{{ form.id !== null ? 'Update' : 'Add' }} Announcement</button>
-          </form>
+    <!-- Input for Title -->
+    <input v-model="form.title" type="text" placeholder="Title" required />
+
+    <!-- Textarea for Content -->
+    <textarea v-model="form.context" placeholder="Content" required></textarea>
+
+    <!-- Dropdown for Status -->
+    <select v-model="form.status" required>
+      <option value="On Going">On Going</option>
+      <option value="Done">Done</option>
+      <option value="Pending">Pending</option>
+    </select>
+
+    <!-- File Input for Image Upload -->
+    <input type="file" @change="handleImageUpload" ref="fileInputRef" />
+
+    <!-- Submit Button: Text dynamically changes based on form.id -->
+    <button type="submit">{{ form.id !== null ? 'Update' : 'Add' }} Announcement</button>
+</form>
+
   
           
           <input v-model="searchQuery" type="text" placeholder="Search announcements..." />
@@ -39,19 +51,30 @@
          
           <div class="announcement-list">
             <div
-              class="announcement-card"
-              v-for="announcement in filteredAnnouncements"
-              :key="announcement.id"
-            >
-              <h3>{{ announcement.title }}</h3>
-              <p>{{ announcement.context }}</p>
-              <p><strong>Status:</strong> {{ announcement.status }}</p>
-              <button @click="editAnnouncement(announcement)">Edit</button>
-              <button @click="confirmDelete(announcement.id)">Delete</button>
-            </div>
-          </div>
+    class="announcement-card"
+    v-for="announcement in filteredAnnouncements"
+    :key="announcement.id">
+    <h3>{{ announcement.title }}</h3>
+    <p>{{ announcement.context }}</p>
+    
+    <!-- Display Image if Available -->
+    <img v-if="announcement.image" :src="announcement.image" alt="Announcement Image" class="announcement-image" />
+    
+    <p><strong>Status:</strong> {{ announcement.status }}</p>
+    <button @click="openEditModal(announcement)">Edit</button>
+    <button @click="confirmDelete(announcement.id)">Delete</button>
+  </div>  
         </div>
-  
+        </div>
+        <div v-if="view === 'calendar'">
+          <h1 class="page-title">Manage Calendar</h1>
+          <vue-cal
+            :events="calendarEvents"
+            @cell-click="handleCellClick"
+            @event-click="editEvent"
+            style="height: 400px;"
+          ></vue-cal>
+        </div>
         <div v-if="view === 'profile'">
           <h1 class="page-title">Profile</h1>
           <div class="profile-details">
@@ -72,52 +95,109 @@
     <ConfirmationModal 
         :isVisible="isConfirmationVisible" 
         :onConfirm="handleDelete" 
-        @close="isConfirmationVisible = false" 
-    />
+        :message="'Are you sure you want to delete this announcement?'" 
+        @close="isConfirmationVisible = false"
+    /> 
+        
     <ConfirmationModal 
         v-if="isLogoutConfirmationVisible" 
         :isVisible="isLogoutConfirmationVisible" 
         :onConfirm="confirmLogout" 
         :onCancel="cancelLogout" 
-        message="Are you sure you want to logout?" 
+        :message="'Are you sure you want to logout?'"
         @close="isLogoutConfirmationVisible = false" 
     />
+    <EditAnnouncementModal
+          v-if="isEditModalVisible"
+          :isVisible="isEditModalVisible"
+          :announcement="selectedAnnouncement"
+          @close="handleEditModalClose"
+        />
     <div v-if="isLoading" class="loader">Loading...</div> 
+    <EventModal
+      :isVisible="isModalVisible"
+      @close="isModalVisible = false"
+      @add-event="addEvent"
+    />
+    <EventDisplayModal
+      :isVisible="isDisplayModalVisible"
+      :events="eventsToDisplay"
+      :date="selectedDate"
+      @close="isDisplayModalVisible = false"
+    />
   </template>
   
   <script setup>
   import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   import axios from 'axios';
+  import { format } from 'date-fns';
   import ChangePasswordModal from './ChangePasswordModal.vue'; 
   import NotificationsModal from './NotificationsModal.vue'; 
   import ConfirmationModal from './ConfirmationModal.vue'; 
+  import EditAnnouncementModal from './EditAnnouncementModal.vue';
+  import VueCal from 'vue-cal';
+  import 'vue-cal/dist/vuecal.css';
+  import EventModal from './EventModal.vue'; // Import the modal component
+  import EventDisplayModal from './EventDisplayModal.vue'; // Import the display modal
 
   const router = useRouter();
 
   const view = ref('announcements');
   const sidebarOpen = ref(false);  
   const announcements = ref([]);
-  const form = ref({ id: null, title: '', context: '', status: 'On Going' });
+  const form = ref({ id: null, title: '', context: '', status: 'On Going', image: null });
   const searchQuery = ref('');
-  
+  const isEditModalVisible = ref(false);
+  const selectedAnnouncement = ref(null);
+  const calendarEvents = ref([]);
+
+  const openEditModal = (announcement) => {
+    console.log("clickd")
+    selectedAnnouncement.value = { ...announcement };
+    isEditModalVisible.value = true;
+  };
+
+  const handleEditModalClose = (wasUpdated) => {
+    isEditModalVisible.value = false;
+    if (wasUpdated) {
+      fetchAnnouncements(); // Refresh the list if an update was made
+    }
+  };
+
   const filteredAnnouncements = computed(() => {
     return announcements.value.filter(announcement =>
       announcement && announcement.title.toLowerCase().includes(searchQuery.value.toLowerCase())
     );
   });
-  
-  
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      form.value.image = file;
+    }
+  };
   const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value; 
 };
-  const addOrUpdateAnnouncement = async () => {
-    isLoading.value = true; 
+const addOrUpdateAnnouncement = async () => {
+    isLoading.value = true; // Start loading
+    const formData = new FormData();
+    formData.append('title', form.value.title);
+    formData.append('context', form.value.context);
+    formData.append('status', form.value.status);
+
+    // Append image to FormData only if an image is selected
+    if (form.value.image) {
+        formData.append('image', form.value.image);
+    }
+
     try {
         if (form.value.id !== null) {
-            await axios.put(`http://127.0.0.1:8000/api/announcement/${form.value.id}`, form.value, {
+            await axios.put(`http://127.0.0.1:8000/api/announcement/${form.value.id}`, formData, {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`, 
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
                 },
             });
             await fetchAnnouncements();
@@ -125,32 +205,29 @@
      
             modalMessage.value = 'Announcement updated successfully!'; 
         } else {
-           
-            const response = await axios.post('http://127.0.0.1:8000/api/announcement', form.value, {
+            const response = await axios.post('http://127.0.0.1:8000/api/announcement', formData, {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`, 
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
                 },
             });
-            announcements.value.push(response.data.announcement); 
-            await fetchAnnouncements(); 
-            announcements.value = [...announcements.value];
-            modalMessage.value = 'Announcement added successfully!'; 
+            announcements.value.push(response.data.announcement);
+            modalMessage.value = 'Announcement added successfully!';
         }
-        resetForm(); 
-        isModalVisible.value = true; 
+        await fetchAnnouncements(); // Refresh the list
+        announcements.value = [...announcements.value]; // Ensure UI updates
+        resetForm(); // Clear the form
+        isModalVisible.value = true; // Show success modal
     } catch (error) {
         console.error('Failed to add/update announcement:', error.response ? error.response.data : error.message);
         modalMessage.value = 'Failed to add/update announcement: ' + (error.response ? error.response.data.message : error.message);
-        isModalVisible.value = true; 
+        isModalVisible.value = true; // Show error modal
     } finally {
-        isLoading.value = false; 
+        isLoading.value = false; // End loading
     }
 };
   
-  const editAnnouncement = (announcement) => {
-    form.value = { ...announcement };
-  };
-  
+
   const isConfirmationVisible = ref(false);
   let announcementToDelete = ref(null); 
 
@@ -181,11 +258,13 @@
         isConfirmationVisible.value = false; 
     }
   };
-  
   const resetForm = () => {
-    form.value = { id: null, title: '', context: '', status: 'On Going' };
+    form.value = { id: null, title: '', context: '', status: 'On Going', image: null };
+    // Reset the file input using the ref
+    if (fileInputRef.value) {
+        fileInputRef.value.value = '';
+    }
   };
-  
   const viewAnnouncements = () => {
     view.value = 'announcements';
   };
@@ -278,6 +357,95 @@
     fetchAnnouncements();
   });
   
+  const fileInputRef = ref(null); // Define the file input reference
+  
+  // Function to switch views
+  const viewCalendar = () => {
+    view.value = 'calendar';
+    fetchCalendarEvents(); // Fetch events when switching to calendar view
+  };
+
+  // Fetch calendar events
+  const fetchCalendarEvents = async () => {
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/api/events', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      console.log('Fetched events:', response.data);
+      calendarEvents.value = response.data.map(event => ({
+        start: event.start,
+        end: event.end,
+        title: event.title,
+      }));
+      console.log('Mapped events:', calendarEvents.value);
+    } catch (error) {
+      console.error('Failed to fetch calendar events:', error);
+    }
+  };
+
+  // Function to handle cell clicks
+  const handleCellClick = (date) => {
+    const formattedDate = format(new Date(date), 'yyyy-MM-dd');
+    const eventsOnDate = calendarEvents.value.filter(event => event.start.startsWith(formattedDate));
+
+    if (eventsOnDate.length > 0) {
+      selectedDate.value = formattedDate;
+      eventsToDisplay.value = eventsOnDate;
+      isDisplayModalVisible.value = true; // Show modal to display events
+    } else {
+      selectedDate.value = formattedDate;
+      isModalVisible.value = true; // Show modal to add event
+    }
+  };
+
+  const selectedDate = ref('');
+
+  const addEvent = (title) => {
+    const newEvent = { start: selectedDate.value, end: selectedDate.value, title };
+    calendarEvents.value.push(newEvent);
+    saveEvent(newEvent);
+  };
+
+  // Edit an existing event
+  const editEvent = (event) => {
+    const newTitle = prompt('Edit event title:', event.title);
+    if (newTitle) {
+      event.title = newTitle;
+      updateEvent(event);
+    }
+  };
+
+  // Save a new event to the backend
+  const saveEvent = async (event) => {
+    try {
+      await axios.post('http://127.0.0.1:8000/api/events', event, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to save event:', error);
+    }
+  };
+
+  // Update an existing event on the backend
+  const updateEvent = async (event) => {
+    try {
+      await axios.put(`http://127.0.0.1:8000/api/events/${event.id}`, event, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to update event:', error);
+    }
+  };
+
+  const isDisplayModalVisible = ref(false);
+  const eventsToDisplay = ref([]);
+
   </script>
   
   <style scoped>
@@ -504,5 +672,22 @@
     font-size: 20px;
     color: #333;
   }
+  .announcement-image {
+    width: 100%; /* Make the image take the full width of its container */
+    height: auto; /* Maintain the aspect ratio */
+    max-height: 200px; /* Optional: Set a maximum height */
+    object-fit: cover; /* Ensure the image covers the container without distortion */
+    border-radius: 5px; /* Optional: Add rounded corners */
+    margin-bottom: 10px; /* Space between the image and other content */
+}
   </style>
     
+
+
+
+
+
+
+
+
+

@@ -7,39 +7,60 @@ use App\Models\Announcement;
 class AnnouncementController extends Controller
 {
     public function announcements(){
-        try{
-            $announcement = Announcement::all();
-            return response()->json($announcement);
-        }
-        catch(\Exception $e){
-            return response()->json(["message"=>"Error Fetching Data","error"=>$e->getMessage()]);
-        }
-    }
-    public function index(){
-        try{
-        $announcement = Announcement::all();
-
-        return response()->json($announcement);
-        }
-        catch(\Exception $e){
-            return response()->json(["message"=>"Error Fetching Data","error"=>$e->getMessage()]);
-        }
+        $announcements = Announcement::all();
+    
         
+        foreach ($announcements as $announcement) {
+            if ($announcement->image) {
+                $announcement->image = asset('storage/' . $announcement->image);
+            }
+        }
+    
+        return response()->json($announcements);
     }
-    public function store(Request $request){
-        $announcement = New Announcement();
-        try{
+    public function index()
+    {
+        $announcements = Announcement::all();
+    
+        
+        foreach ($announcements as $announcement) {
+            if ($announcement->image) {
+                $announcement->image = asset('storage/' . $announcement->image);
+            }
+        }
+    
+        return response()->json($announcements);
+    }
+    public function store(Request $request)
+    {
+        $announcement = new Announcement();
+        try {
             $announcement->title = $request->input('title');
             $announcement->context = $request->input('context');
             $announcement->status = $request->input('status');
-            $announcement->save();
+    
 
-            return response()->json(["message"=>"Announcement Create Succesfully",$announcement]);
-        }
-        catch(\Exception $e){
-            return response()->json(["message"=>"Error Adding Data","error"=>$e->getMessage()]);
+            if ($request->hasFile('image')) {
+                
+                $request->validate([
+                    'image' => 'image', 
+                ]);
+    
+               
+                $imagePath = $request->file('image')->store('announcements', 'public');
+    
+                
+                $announcement->image = $imagePath;
+            }
+    
+            $announcement->save();
+    
+            return response()->json(["message" => "Announcement Created Successfully", $announcement]);
+        } catch (\Exception $e) {
+            return response()->json(["message" => "Error Adding Data", "error" => $e->getMessage()]);
         }
     }
+    
     public function show($id){
         try{
         $announcement = Announcement::find($id);
@@ -61,18 +82,23 @@ class AnnouncementController extends Controller
             if(!$announcement) {
                 return response()->json(["message"=>"No Id Found"]);
             }
-            else{
-                // Update the announcement properties
-                $announcement->title = $request->input('title');
-                $announcement->context = $request->input('context');
-                $announcement->status = $request->input('status');
-                $announcement->save(); // Save the updated announcement
-
-                return response()->json(["message"=>"Updated Successfully", "announcement" => $announcement]);
+    
+            $announcement->title = $request->input('title');
+            $announcement->context = $request->input('context');
+            $announcement->status = $request->input('status');
+    
+            // Handle file upload if a new image is provided
+            if ($request->hasFile('image')) {
+                $imagePath = $request->file('image')->store('announcements', 'public');
+                $announcement->image = $imagePath;
             }
+    
+            $announcement->save(); // Save the updated announcement
+    
+            return response()->json(["message"=>"Updated Successfully", "announcement" => $announcement]);
         }
         catch(\Exception $e){
-            return response()->json(["message"=>"Error Updating  Data","error"=>$e->getMessage()]);
+            return response()->json(["message"=>"Error Updating Data","error"=>$e->getMessage()]);
         }
     }
     public function destroy($id){

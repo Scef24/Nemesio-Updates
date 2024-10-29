@@ -5,14 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Announcement extends Model
+class Event extends Model
 {
     use HasFactory;
-    protected $table = "announcement";
     protected $fillable = [
         'title',
-        'context',
-        'status',
-        'image'
+        'description',
+        'start',
+        'end',
+        'status'
     ];
 }

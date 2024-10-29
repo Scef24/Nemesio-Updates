@@ -1,118 +1,156 @@
 <template>
-    <div class="main-container">
-      <!-- Hamburger Menu for Mobile View -->
-      <button class="hamburger" @click="toggleSidebar">
-        <span class="hamburger-bar"></span>
-        <span class="hamburger-bar"></span>
-        <span class="hamburger-bar"></span>
-      </button>
-  
-      <!-- Sidebar -->
-      <aside class="sidebar" :class="{ 'sidebar-hidden': !sidebarOpen, 'sidebar-open': sidebarOpen }">
+  <div class="main-container">
+    <!-- Hamburger Menu for Mobile View -->
+    <button class="hamburger" @click="toggleSidebar">
+      <span class="hamburger-bar"></span>
+      <span class="hamburger-bar"></span>
+      <span class="hamburger-bar"></span>
+    </button>
 
-        <h2 class="sidebar-title">Menu</h2>
-        <ul class="sidebar-menu">
-          <li><a href="/login" @click="goToLogin">Login</a></li>
-        </ul>
-      </aside>
-  
-      <!-- Announcements Section -->
-      <div class="content-container">
-        <h1 class="page-title">Announcements</h1>
-        <div class="announcements-list">
-          <div
-            class="announcement-card"
-            v-for="announcement in announcements"
-            :key="announcement.id"
-          >
-            <h2 class="card-title">{{ announcement.title }}</h2>
-            <p class="card-content">{{ announcement.context }}</p>
-          </div>
+    <!-- Sidebar -->
+    <aside class="sidebar" :class="{ 'sidebar-hidden': !sidebarOpen, 'sidebar-open': sidebarOpen }">
+      <h2 class="sidebar-title">Menu</h2>
+      <ul class="sidebar-menu">
+        <li><a href="/login" @click="goToLogin">Login</a></li>
+        <li><a href="/about" @click="goToAbout">About</a></li>
+      </ul>
+    </aside>
+
+    <!-- Button to toggle calendar visibility -->
+    <button @click="toggleCalendar" class="toggle-calendar-button">
+      {{ calendarVisible ? 'Show Announcements' : 'Show Calendar' }}
+    </button>
+
+    <!-- Conditional Rendering -->
+    <div v-if="calendarVisible" class="calendar-container">
+      <ReadOnlyCalendar />
+    </div>
+
+    <div v-else class="content-container">
+      <h1 class="page-title">Announcements</h1>
+      <div class="announcements-list">
+        <div
+          class="announcement-card"
+          v-for="announcement in announcements"
+          :key="announcement.id"
+          @click="openModal(announcement.image)"
+        >
+          <img v-if="announcement.image" :src="announcement.image" alt="Announcement Image" class="announcement-image" height="200px" width="300px"/>
+          <h2 class="card-title">{{ announcement.title }}</h2>
+          <p class="card-content">{{ announcement.context }}</p>  
         </div>
       </div>
     </div>
-  </template>
-  
-  
-  <script setup>
-  import { ref, onMounted } from 'vue';
-  import axios from 'axios';
 
-  const announcements = ref([]); // Initialize announcements as an empty array
-  const sidebarOpen = ref(false); // Sidebar state
+    <!-- Inline Modal -->
+    <div v-if="isModalVisible" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content">
+        <img :src="selectedImage" alt="Announcement Image" class="modal-image" height="500px" width="600px" />
+      </div>
+    </div>
+  </div>
+</template>
 
-  const toggleSidebar = () => {
-    sidebarOpen.value = !sidebarOpen.value;
-  };
-  
-  const goToHistory = () => {
-    console.log("Navigating to History");
-    sidebarOpen.value = false; // Close sidebar after clicking
-  };
-  
-  const goToLogin = () => {
-    console.log("Navigating to Login");
-    sidebarOpen.value = false; // Close sidebar after clicking
-  };
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue';
+import axios from 'axios';
+import ReadOnlyCalendar from './ReadOnlyCalendar.vue';
 
-  // Fetch announcements from the backend API
-  const fetchAnnouncements = async () => {
-    try {
-        const response = await axios.get('http://127.0.0.1:8000/api/announcements'); // Replace with your API URL
-        console.log(response.data)
-        announcements.value = response.data; // Set announcements to the fetched data
-    } catch (error) {
-        console.error('Error fetching announcements:', error);
-    }
-  };
+const announcements = ref([]);
+const calendarVisible = ref(false);
+const isModalVisible = ref(false);
+const selectedImage = ref('');
+const sidebarOpen = ref(false);
+let fetchInterval;
 
-  // Fetch announcements when the component is mounted
-  onMounted(() => {
-    fetchAnnouncements();
-  });
-  </script>
-  
+const toggleSidebar = () => {
+  sidebarOpen.value = !sidebarOpen.value;
+};
 
+const toggleCalendar = () => {
+  calendarVisible.value = !calendarVisible.value;
+};
 
+const openModal = (imageSrc) => {
+  selectedImage.value = imageSrc;
+  isModalVisible.value = true;
+};
+
+const closeModal = () => {
+  isModalVisible.value = false;
+};
+
+const fetchAnnouncements = async () => {
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/api/announcements');
+    announcements.value = response.data;
+  } catch (error) {
+    console.error('Error fetching announcements:', error);
+  }
+};
+
+onMounted(() => {
+  fetchAnnouncements();
+  fetchInterval = setInterval(fetchAnnouncements, 5000); // Fetch every 60 seconds
+});
+
+onUnmounted(() => {
+  clearInterval(fetchInterval);
+});
+</script>
 
 <style scoped>
 .main-container {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
-  background-color: #fff; /* White background */
-  
+  background-color: #fff;
 }
 
 /* Hamburger Menu */
 .hamburger {
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 5px;
   position: fixed;
-  top: 10px;
-  left: 20px;
+  top: 5px;
+  left: 5px;
   background: none;
   border: none;
   cursor: pointer;
   z-index: 1000;
+  color: black;
 }
 
 .hamburger-bar {
   width: 30px;
   height: 3px;
-  background-color: #020202;
+  background-color: #111011;
 }
 .hamburger:focus {
   outline: none; 
 }
 
 .sidebar {
-  width: 220px;
-  background-color: #800000; /* Maroon sidebar */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background-color: #800000;
   padding: 20px;
   box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+  transform: translateX(-100%);
   transition: transform 0.3s ease;
-  color: white; /* White text for sidebar */
+  z-index: 999;
+}
+
+.sidebar-open {
+  transform: translateX(0);
+}
+
+.sidebar-hidden {
+  transform: translateX(-100%);
 }
 
 .sidebar-title {
@@ -148,13 +186,14 @@
   flex: 1;
   padding: 20px;
   transition: margin-left 0.3s ease;
+  margin-left: 50px; /* Adjust based on sidebar width */
 }
 
 .page-title {
   text-align: center;
   color: #800000; /* Maroon text for page title */
   margin-bottom: 30px;
-  margin-top:30px;
+  margin-top: 30px;
   font-size: 32px;
   font-weight: bold;
 }
@@ -191,14 +230,6 @@
 .card-content {
   color: #333; /* Dark text for card content */
 }
-.sidebar-hidden {
-  transform: translateX(-100%);
-}
-
-.sidebar-open {
-  transform: translateX(0);
-}
-
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -206,53 +237,109 @@
     flex-direction: column;
   }
 
-  .hamburger {
-    display: flex;
-  }
-  .sidebar {
-    width: 100px; /* Adjust this value for mobile view */
-  }
-  
-
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    transform: translateX(-100%);
+  .content-container {
+    margin-left: 0;
   }
 
-  .sidebar-hidden {
+  .sidebar {
+    width: 100%;
+    height: auto;
     transform: translateX(-100%);
   }
 
   .sidebar-open {
     transform: translateX(0);
   }
+}
+
+body {
+  display: flex;
+  justify-content: center; /* Centers horizontally */
+  align-items: center;    /* Centers vertically */
+  height: 100vh;          /* Full viewport height */
+  margin: 0;              /* Remove default margin */
+}
+
+h1 {
+  text-align: center;     /* Center text */
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  max-width: 90vw; /* Use viewport width */
+  max-height: 90vh; /* Use viewport height */
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-container {
+    flex-direction: column;
+  }
 
   .content-container {
     margin-left: 0;
   }
-}
-@media (min-width: 769px) {
-  .hamburger {
-    display: flex; /* Show hamburger in desktop view */
+
+  .sidebar {
+    width: 50%;
+    height: 100vh;
+    transform: translateX(-100%); /* Ensure it uses translateX */
+  }
+
+  .sidebar-open {
+    transform: translateX(0); /* Slide in from the left */
   }
 }
 
-/* Show sidebar when open on mobile */
-.sidebar-hidden {
-  transform: translateX(-100%);
+/* Button to toggle calendar */
+.toggle-calendar-button {
+  margin-top: 5rem;
+  padding: 10px 20px;
+  background-color: #800000;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-.sidebar-open {
-  transform: translateX(0);
+.toggle-calendar-button:hover {
+  background-color: #a00000;
 }
-@media (max-width: 768px) {
-  .hamburger {
-    display: flex; /* Show hamburger in mobile view */
-    top: 5px; /* Adjust top position as needed */
-    left: 5px; /* Move hamburger closer to the left side */
-  }
+
+/* Calendar Section */
+.calendar-container {
+  margin-left: 0;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
 }
 </style>
